@@ -92,7 +92,7 @@ async def on_message(message):
 async def game_played_tracker():
     await client.wait_until_ready()
     channel_test = client.get_channel(458644594905710595)
-    channel_rito_daddy = client.get_channel(700018369281261568)
+    #channel_rito_daddy = client.get_channel(700018369281261568)
 
     for friend in LIST_OF_FRIENDS:
         if FRIENDS_LAST_GAME_PLAYED[friend] != get_most_recent_match(friend):
