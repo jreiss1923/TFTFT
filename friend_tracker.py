@@ -1,4 +1,5 @@
 import json
+import random
 import discord
 from discord.ext import tasks
 import requests
@@ -78,6 +79,9 @@ def get_data_for_user(summoner_name):
     strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, " + summoner_name + " finished " + str(rank) + "/8.")
     return strings
 
+list_of_hani_insults = ["Hey what happened :slight_smile:", ":clown:", "sine waving i see you", "heyyy hani are you lowering your mmr for easier lobbies?"]
+
+list_of_sandy_insults = ["imagine being lapped by hani", "dude clean your room instead of playing"]
 @client.event
 async def on_message(message):
     if message.content == ".refresh":
@@ -87,10 +91,17 @@ async def on_message(message):
             await message.channel.send(embed=embed)
     if message.content == ".flamehani":
         if get_last_ranking("alostaz47"):
-            flame_str = FLAME_MESSAGE_LIST[random.randint(0, 5)]
-            await message.channel.send(flame_str)
+            insult = random.choice(list_of_hani_insults)
+            await message.channel.send(insult)
         else:
             await message.channel.send("You can't flame Hani just yet...")
+            await message.channel.send("...but he does have a crippling addiction")
+    if message.content == ".flamesandy":
+        if get_last_ranking("alostaz47"):
+            insult = random.choice(list_of_hani_insults)
+            await message.channel.send(insult)
+        else:
+            await message.channel.send("I feel bad insulting Sandy now it's like kicking a dead deer")
     elif message.content == ".help":
         embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
         embed.add_field(name="Refresh", value=".refresh: Displays recent information about users' last game and current ranking.", inline=False)
