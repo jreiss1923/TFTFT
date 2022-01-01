@@ -17,7 +17,8 @@ FLAME_MESSAGE_2 = ":slight_smile:"
 FLAME_MESSAGE_3 = "It clicked btw"
 FLAME_MESSAGE_4 = ":clown:"
 FLAME_MESSAGE_5 = "It's just a warmup game"
-FLAME_MESSAGE_LIST = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5]
+FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_5, "Hey what happened :slight_smile:", ":clown:", "sine waving i see you", "heyyy hani are you lowering your mmr for easier lobbies?"]
+FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, "imagine being lapped by hani", "dude clean your room instead of playing"]
 
 headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
 
@@ -58,7 +59,13 @@ def get_data_for_user(summoner_name):
     strings = []
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
-    response_rank = json.loads(requests.get("https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/" + response_ids["id"], headers=headers).content.decode())[0]
+    response_rank = json.loads(requests.get("https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/" + response_ids["id"], headers=headers).content.decode())
+
+    for queue in response_rank:
+        if queue['queueType'] == 'RANKED_TFT':
+            response_rank = queue
+
+
     strings.append(summoner_name + " is currently " + response_rank['tier'] + " " + response_rank['rank'] + ", " + str(response_rank['leaguePoints']) + " LP.")
 
     response_matches = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/" + response_ids['puuid'] + "/ids?count=1", headers=headers).content.decode())
@@ -79,9 +86,7 @@ def get_data_for_user(summoner_name):
     strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, " + summoner_name + " finished " + str(rank) + "/8.")
     return strings
 
-list_of_hani_insults = ["Hey what happened :slight_smile:", ":clown:", "sine waving i see you", "heyyy hani are you lowering your mmr for easier lobbies?"]
 
-list_of_sandy_insults = ["imagine being lapped by hani", "dude clean your room instead of playing"]
 @client.event
 async def on_message(message):
     if message.content == ".refresh":
@@ -91,14 +96,14 @@ async def on_message(message):
             await message.channel.send(embed=embed)
     if message.content == ".flamehani":
         if get_last_ranking("alostaz47"):
-            insult = random.choice(list_of_hani_insults)
+            insult = random.choice(FLAME_MESSAGE_LIST_HANI)
             await message.channel.send(insult)
         else:
             await message.channel.send("You can't flame Hani just yet...")
             await message.channel.send("...but he does have a crippling addiction")
     if message.content == ".flamesandy":
-        if get_last_ranking("alostaz47"):
-            insult = random.choice(list_of_hani_insults)
+        if get_last_ranking("SaltySandyHS"):
+            insult = random.choice(FLAME_MESSAGE_LIST_SANDY)
             await message.channel.send(insult)
         else:
             await message.channel.send("I feel bad insulting Sandy now it's like kicking a dead deer")
