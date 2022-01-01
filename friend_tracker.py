@@ -4,7 +4,6 @@ from discord.ext import tasks
 import requests
 import datetime
 import os
-import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +15,7 @@ client = discord.Client()
 
 def get_last_ranking(summoner_name):
 
-    headers = {"X-Riot-Token": os.getenv("RIOT_API_TOKEN")}
+    headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
     response_matches = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/" + response_ids['puuid'] + "/ids?count=1", headers=headers).content.decode())
@@ -45,7 +44,7 @@ def get_data_for_user(summoner_name):
 
     strings = []
 
-    headers = {"X-Riot-Token": os.getenv("RIOT_API_TOKEN")}
+    headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
     response_rank = json.loads(requests.get("https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/" + response_ids["id"], headers=headers).content.decode())[0]
