@@ -114,7 +114,7 @@ async def game_played_tracker():
 
     for friend in LIST_OF_FRIENDS:
         recent_match = get_most_recent_match(friend)
-        if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) > 300:
+        if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
             strings = get_data_for_user(friend)
             ranking_str = ""
             if get_last_ranking(friend):
