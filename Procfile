@@ -1,0 +1,1 @@
+worker: python friend_tracker.py
