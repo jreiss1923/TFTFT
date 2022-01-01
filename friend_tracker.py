@@ -113,12 +113,6 @@ async def on_message(message):
         embed.add_field(name="Help", value=".help: Displays this message.", inline=False)
 
         await message.channel.send(embed=embed)
-    elif message.content == ".flamesandy":
-        if get_last_ranking("SaltySandyHS"):
-            flame_str = FLAME_MESSAGE_LIST[random.randint(0, 5)]
-            await message.channel.send(flame_str)
-        else:
-            await message.channel.send("You can't flame Sandy just yet...")
 
 
 
