@@ -104,7 +104,7 @@ async def game_played_tracker():
                 ranking_str = "top 4"
             embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[1], color=discord.Colour.teal())
             await channel_test.send(embed=embed)
-            await channel_rito_daddy.send(embed=embed)
+            #await channel_rito_daddy.send(embed=embed)
             FRIENDS_LAST_GAME_PLAYED[friend] = get_most_recent_match(friend)
 
 game_played_tracker.start()
