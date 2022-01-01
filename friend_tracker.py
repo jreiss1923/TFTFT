@@ -77,7 +77,7 @@ async def on_message(message):
             await message.channel.send(embed=embed)
     if message.content == ".flamehani":
         if get_last_ranking("alostaz47"):
-            await message.channel.send("Imagine forcing the same comp over and over and still going bot4...")
+            await message.channel.send("Hey what happened :slight_smile:")
         else:
             await message.channel.send("You can't flame Hani just yet...")
     elif message.content == ".help":
@@ -91,7 +91,8 @@ async def on_message(message):
 @tasks.loop(seconds=60)
 async def game_played_tracker():
     await client.wait_until_ready()
-    channel = client.get_channel(458644594905710595)
+    channel_test = client.get_channel(458644594905710595)
+    channel_rito_daddy = client.get_channel(700018369281261568)
 
     for friend in LIST_OF_FRIENDS:
         if FRIENDS_LAST_GAME_PLAYED[friend] != get_most_recent_match(friend):
@@ -102,7 +103,8 @@ async def game_played_tracker():
             else:
                 ranking_str = "top 4"
             embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[1], color=discord.Colour.teal())
-            await channel.send(embed=embed)
+            await channel_test.send(embed=embed)
+            await channel_rito_daddy.send(embed=embed)
             FRIENDS_LAST_GAME_PLAYED[friend] = get_most_recent_match(friend)
 
 game_played_tracker.start()
