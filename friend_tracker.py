@@ -92,7 +92,7 @@ async def on_message(message):
 async def game_played_tracker():
     await client.wait_until_ready()
     channel_test = client.get_channel(458644594905710595)
-    #channel_rito_daddy = client.get_channel(700018369281261568)
+    channel_rito_daddy = client.get_channel(700018369281261568)
 
     for friend in LIST_OF_FRIENDS:
         if FRIENDS_LAST_GAME_PLAYED[friend] != get_most_recent_match(friend):
@@ -104,7 +104,7 @@ async def game_played_tracker():
                 ranking_str = "top 4"
             embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[1], color=discord.Colour.teal())
             await channel_test.send(embed=embed)
-            #await channel_rito_daddy.send(embed=embed)
+            await channel_rito_daddy.send(embed=embed)
             FRIENDS_LAST_GAME_PLAYED[friend] = get_most_recent_match(friend)
 
 game_played_tracker.start()
