@@ -27,7 +27,17 @@ FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, F
 
 headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
 
+items_file = open('items.json')
+items_data = json.load(items_file)
+
 client = discord.Client()
+
+
+# returns the item name for an item id
+def get_item_name(item_id):
+    for item in items_data:
+        if item['id'] == item_id:
+            return item['name']
 
 
 # returns the difference in time between now and the match selected
@@ -92,9 +102,17 @@ def get_data_for_user(summoner_name):
 
     rank = -1
 
-    # gets rank for queried player
+    # gets rank, items for queried player
+    strings.append("")
     for player in response_recent_match['info']['participants']:
         if player['puuid'] == response_ids['puuid']:
+            # gets items and player units
+            for unit in player['units']:
+                strings[1] += str(unit['tier']) + " star " + unit['character_id'][5:] + ": "
+                if len(unit['items']) == 0:
+                    strings[1] += " No items\n"
+                else:
+                    strings[1] += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
             rank = player['placement']
 
     strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, ")
@@ -111,7 +129,9 @@ async def on_message(message):
         for friend in LIST_OF_FRIENDS:
             if friend == "alostaz47" or friend == "SaltySandyHS":
                 strings = get_data_for_user(friend)
-                embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[1] + " " + strings[2], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[2] + " " + strings[3], color=discord.Colour.teal())
+                # displays last comp played
+                embed.add_field(name="Last Comp:", value=strings[1], inline=False)
                 await message.channel.send(embed=embed)
     # flames hani
     if message.content == ".flamehani":
@@ -156,11 +176,13 @@ async def game_played_tracker():
                 ranking_str = "bot 4"
             else:
                 ranking_str = "top 4"
-            embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[2], color=discord.Colour.teal())
+            embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[3], color=discord.Colour.teal())
+            # displays last comp played
+            embed.add_field(name="Last Comp:", value=strings[1], inline=False)
             await channel_test.send(embed=embed)
             await channel_rito_daddy.send(embed=embed)
             FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
-        # on startup it does this for old games
+        # just add older games to last game played
         elif FRIENDS_LAST_GAME_PLAYED[friend] != recent_match:
             FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
 
