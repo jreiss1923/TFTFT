@@ -193,8 +193,8 @@
   },
   {
     "id": 28,
-    "name": "Legionnaire Emblem",
-    "description": "The holder gains the Legionnaire trait.",
+    "name": "Challenger Emblem",
+    "description": "The holder gains the Challenger trait.",
     "isUnique": true,
     "isElusive": true,
     "isRadiant": false
