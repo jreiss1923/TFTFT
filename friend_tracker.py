@@ -97,7 +97,9 @@ def get_data_for_user(summoner_name):
         if player['puuid'] == response_ids['puuid']:
             rank = player['placement']
 
-    strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, " + summoner_name + " finished " + str(rank) + "/8.")
+    strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, ")
+    strings.append(summoner_name + " finished " + str(rank) + "/8.")
+
     return strings
 
 
@@ -107,9 +109,10 @@ async def on_message(message):
     # displays information for all players
     if message.content == ".refresh":
         for friend in LIST_OF_FRIENDS:
-            strings = get_data_for_user(friend)
-            embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[1], color=discord.Colour.teal())
-            await message.channel.send(embed=embed)
+            if friend == "alostaz47" or friend == "SaltySandyHS":
+                strings = get_data_for_user(friend)
+                embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[1] + " " + strings[2], color=discord.Colour.teal())
+                await message.channel.send(embed=embed)
     # flames hani
     if message.content == ".flamehani":
         if get_last_ranking("alostaz47"):
@@ -141,7 +144,7 @@ async def game_played_tracker():
     await client.wait_until_ready()
     # test -> general and pat harem -> rito daddy
     channel_test = client.get_channel(458644594905710595)
-    channel_rito_daddy = client.get_channel(700018369281261568)
+    channel_rito_daddy = client.get_channel(926942218974019665)
 
     for friend in LIST_OF_FRIENDS:
         recent_match = get_most_recent_match(friend)
@@ -153,7 +156,7 @@ async def game_played_tracker():
                 ranking_str = "bot 4"
             else:
                 ranking_str = "top 4"
-            embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0], color=discord.Colour.teal())
+            embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[2], color=discord.Colour.teal())
             await channel_test.send(embed=embed)
             await channel_rito_daddy.send(embed=embed)
             FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
