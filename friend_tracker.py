@@ -104,15 +104,19 @@ def get_data_for_user(summoner_name):
 
     # gets rank, items for queried player
     strings.append("")
+    strings.append("")
     for player in response_recent_match['info']['participants']:
         if player['puuid'] == response_ids['puuid']:
+            for trait in player['traits']:
+                if trait['tier_current'] != 0:
+                    strings[1] += str(trait['num_units']) + " " + trait['name'][5:] + " "
             # gets items and player units
             for unit in player['units']:
-                strings[1] += str(unit['tier']) + " star " + unit['character_id'][5:] + ": "
+                strings[2] += str(unit['tier']) + " star " + unit['character_id'][5:] + ": "
                 if len(unit['items']) == 0:
-                    strings[1] += " No items\n"
+                    strings[2] += " No items\n"
                 else:
-                    strings[1] += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
+                    strings[2] += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
             rank = player['placement']
 
     strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, ")
@@ -129,9 +133,9 @@ async def on_message(message):
         for friend in LIST_OF_FRIENDS:
             if friend == "alostaz47" or friend == "SaltySandyHS":
                 strings = get_data_for_user(friend)
-                embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[2] + " " + strings[3], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[3] + " " + strings[4], color=discord.Colour.teal())
                 # displays last comp played
-                embed.add_field(name="Last Comp:", value=strings[1], inline=False)
+                embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
                 await message.channel.send(embed=embed)
     # flames hani
     if message.content == ".flamehani":
@@ -178,7 +182,7 @@ async def game_played_tracker():
                 ranking_str = "top 4"
             embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[3], color=discord.Colour.teal())
             # displays last comp played
-            embed.add_field(name="Last Comp:", value=strings[1], inline=False)
+            embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
             await channel_test.send(embed=embed)
             await channel_rito_daddy.send(embed=embed)
             FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
