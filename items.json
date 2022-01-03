@@ -249,8 +249,8 @@
   },
   {
     "id": 38,
-    "name": "Spellweaver Emblem",
-    "description": "The holder gains the Spellweaver trait.",
+    "name": "Arcanist Emblem",
+    "description": "The holder gains the Arcanist trait.",
     "isUnique": true,
     "isElusive": false,
     "isRadiant": false
