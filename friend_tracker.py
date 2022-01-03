@@ -22,8 +22,9 @@ FLAME_MESSAGE_7 = "heyyy hani are you lowering your mmr for easier lobbies?"
 FLAME_MESSAGE_8 = "imagine being lapped by hani"
 FLAME_MESSAGE_9 = "dude clean your room instead of playing"
 FLAME_MESSAGE_10 = "spoken like a true goldie"
+FLAME_MESSAGE_11 = "best mental na btw"
 
-FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10]
+FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11]
 FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_8, FLAME_MESSAGE_9]
 
 headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
@@ -39,6 +40,8 @@ def get_item_name(item_id):
     for item in items_data:
         if item['id'] == item_id:
             return item['name']
+    # placeholder while trying to figure out items
+    return ""
 
 
 # returns the difference in time between now and the match selected

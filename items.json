@@ -430,5 +430,54 @@
     "isUnique": false,
     "isElusive": false,
     "isRadiant": false
+  },
+  {
+    "id": 2197,
+    "name": "Bruiser Emblem",
+    "description": "The holder gains the Bruiser trait.",
+    "isUnique": false,
+    "isElusive": false,
+    "isRadiant": false
+  },
+  {
+    "id": 2190,
+    "name": "Mutant Emblem",
+    "description": "The holder gains the Mutant trait.",
+    "isUnique": false,
+    "isElusive": false,
+    "isRadiant": false
+  },
+  {
+    "id": 2193,
+    "name": "Socialite Emblem",
+    "description": "The holder gains the Socialite trait.",
+    "isUnique": false,
+    "isElusive": false,
+    "isRadiant": false
+  },
+  {
+    "id": 2192,
+    "name": "Mercenary Emblem",
+    "description": "The holder gains the Mercenary trait.",
+    "isUnique": false,
+    "isElusive": false,
+    "isRadiant": false
+  },
+  {
+    "id": 2199,
+    "name": "Academy Emblem",
+    "description": "The holder gains the Academy trait.",
+    "isUnique": false,
+    "isElusive": false,
+    "isRadiant": false
+  },
+  {
+    "id": 2196,
+    "name": "Protector Emblem",
+    "description": "The holder gains the Protector trait.",
+    "isUnique": false,
+    "isElusive": false,
+    "isRadiant": false
   }
+
 ]
