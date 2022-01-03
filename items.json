@@ -337,8 +337,8 @@
   },
   {
     "id": 58,
-    "name": "Ironclad Emblem",
-    "description": "The holder gains the Ironclad trait.",
+    "name": "Bodyguard Emblem",
+    "description": "The holder gains the Bodyguard trait.",
     "isUnique": true,
     "isElusive": true,
     "isRadiant": false
