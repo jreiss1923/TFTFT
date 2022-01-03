@@ -297,8 +297,8 @@
   },
   {
     "id": 48,
-    "name": "Renewer Emblem",
-    "description": "The holder gains the Renewer trait.",
+    "name": "Academy Emblem",
+    "description": "The holder gains the Academy trait.",
     "isUnique": true,
     "isElusive": false,
     "isRadiant": false
