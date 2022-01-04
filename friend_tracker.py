@@ -6,11 +6,15 @@ import datetime
 import os
 from dotenv import load_dotenv
 import random
+import roman
+import functools
 
 load_dotenv()
 
 LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw"]
 FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None}
+
+RANKING_DICT = {"CHALLENGER":0, "GRANDMASTER":1, "MASTER":2, "DIAMOND":3, "PLATINUM":4, "GOLD":5, "SILVER":6, "BRONZE":7, "IRON":8}
 
 FLAME_MESSAGE_1 = "Hey what happened :slight_smile:"
 FLAME_MESSAGE_2 = ":slight_smile:"
@@ -35,6 +39,42 @@ items_file = open('items.json')
 items_data = json.load(items_file)
 
 client = discord.Client()
+
+
+# compares ranks of users given the list of strings from user output
+def compare_ranks(list_of_strings_1, list_of_strings_2):
+
+    rank_str_1 = list_of_strings_1[0]
+    rank_str_2 = list_of_strings_2[0]
+
+    rank_1 = RANKING_DICT.get(rank_str_1.split(" ")[-4])
+    rank_2 = RANKING_DICT.get(rank_str_2.split(" ")[-4])
+
+    div_1 = rank_str_1.split(" ")[-3][:-1]
+    div_2 = rank_str_2.split(" ")[-3][:-1]
+
+    lp_1 = int(rank_str_1.split(" ")[-2])
+    lp_2 = int(rank_str_2.split(" ")[-2])
+
+    # if rank (challenger, gm, etc.) greater
+    if rank_1 < rank_2:
+        return -1
+    elif rank_1 > rank_2:
+        return 1
+    else:
+        # if division (i, ii, iii) better
+        if roman.fromRoman(div_1) < roman.fromRoman(div_2):
+            return -1
+        elif roman.fromRoman(div_1) > roman.fromRoman(div_2):
+            return 1
+        else:
+            # if lp greater
+            if lp_1 > lp_2:
+                return -1
+            elif lp_2 < lp_1:
+                return 1
+            else:
+                return 0
 
 
 # returns the item name for an item id
@@ -136,12 +176,14 @@ def get_data_for_user(summoner_name):
 async def on_message(message):
     # displays information for all players
     if message.content == ".refresh":
-        for friend in LIST_OF_FRIENDS:
+        friend_strings_list = [get_data_for_user(friend) for friend in LIST_OF_FRIENDS]
+        friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
+        for friend_strings in friend_strings_list:
+            friend = friend_strings[0].split(" ")[0]
             if friend == "alostaz47" or friend == "SaltySandyHS":
-                strings = get_data_for_user(friend)
-                embed = discord.Embed(title=friend, description=strings[0] + "\n" + strings[3] + " " + strings[4], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + friend_strings[3] + " " + friend_strings[4], color=discord.Colour.teal())
                 # displays last comp played
-                embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
+                embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
                 await message.channel.send(embed=embed)
     # flames hani
     if message.content == ".flamehani":
@@ -149,8 +191,7 @@ async def on_message(message):
             insult = random.choice(FLAME_MESSAGE_LIST_HANI)
             await message.channel.send(insult)
         else:
-            await message.channel.send("You can't flame Hani just yet...")
-            await message.channel.send("...but he does have a crippling addiction")
+            await message.channel.send("You can't flame Hani just yet...\n...but he does have a crippling addiction")
     # flames sandy
     if message.content == ".flamesandy":
         if get_last_ranking("SaltySandyHS"):
