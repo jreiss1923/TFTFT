@@ -35,6 +35,7 @@ FLAME_MESSAGE_14 = "new master duel video dropped"
 
 FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11, FLAME_MESSAGE_12, FLAME_MESSAGE_14]
 FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_8, FLAME_MESSAGE_9, FLAME_MESSAGE_12, FLAME_MESSAGE_13]
+FLAME_MESSAGE_LIST_JREISS = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_10, FLAME_MESSAGE_12]
 
 headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
 
@@ -205,6 +206,11 @@ async def on_message(message):
             await message.channel.send(insult)
         else:
             await message.channel.send("I feel bad insulting Sandy now it's like kicking a dead deer")
+    # flames jreiss
+    if message.content == ".flamejreiss":
+        if get_last_ranking("ExistToCease"):
+            insult = random.choice(FLAME_MESSAGE_LIST_JREISS)
+            await message.channel.send(insult)
     # help command
     elif message.content == ".help":
         embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
