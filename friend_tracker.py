@@ -231,11 +231,11 @@ async def game_played_tracker():
     channel_rito_daddy = client.get_channel(926942218974019665)
 
     for friend in LIST_OF_FRIENDS:
-        get_most_recent_match(friend)
-        recent_match = FRIENDS_DATA[friend]
+        recent_match = get_most_recent_match(friend)
         # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
         if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
-            strings = get_data_for_user(friend)
+            get_data_for_user(friend)
+            strings = FRIENDS_DATA[friend]
             ranking_str = ""
             if get_last_ranking(friend):
                 ranking_str = "bot 4"
