@@ -32,10 +32,11 @@ FLAME_MESSAGE_11 = "best mental na btw"
 FLAME_MESSAGE_12 = "Must've been a glitch!"
 FLAME_MESSAGE_13 = "cosine waving i see you"
 FLAME_MESSAGE_14 = "new master duel video dropped"
+FLAME_MESSAGE_15 = "at least he can finish a tft game quickly"
 
 FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11, FLAME_MESSAGE_12, FLAME_MESSAGE_14]
 FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_8, FLAME_MESSAGE_9, FLAME_MESSAGE_12, FLAME_MESSAGE_13]
-FLAME_MESSAGE_LIST_JREISS = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_10, FLAME_MESSAGE_12]
+FLAME_MESSAGE_LIST_JREISS = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_10, FLAME_MESSAGE_12, FLAME_MESSAGE_15]
 
 headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
 
@@ -230,7 +231,8 @@ async def game_played_tracker():
     channel_rito_daddy = client.get_channel(926942218974019665)
 
     for friend in LIST_OF_FRIENDS:
-        recent_match = get_most_recent_match(friend)
+        get_most_recent_match(friend)
+        recent_match = FRIENDS_DATA[friend]
         # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
         if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
             strings = get_data_for_user(friend)
