@@ -11,8 +11,10 @@ import functools
 
 load_dotenv()
 
-LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw"]
-FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None}
+LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw", "izone tft player"]
+FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
+FRIENDS_LAST_GAME_IN_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
+FRIENDS_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
 
 RANKING_DICT = {"CHALLENGER":0, "GRANDMASTER":1, "MASTER":2, "DIAMOND":3, "PLATINUM":4, "GOLD":5, "SILVER":6, "BRONZE":7, "IRON":8}
 
@@ -29,8 +31,9 @@ FLAME_MESSAGE_10 = "spoken like a true goldie"
 FLAME_MESSAGE_11 = "best mental na btw"
 FLAME_MESSAGE_12 = "Must've been a glitch!"
 FLAME_MESSAGE_13 = "cosine waving i see you"
+FLAME_MESSAGE_14 = "new master duel video dropped"
 
-FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11, FLAME_MESSAGE_12]
+FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11, FLAME_MESSAGE_12, FLAME_MESSAGE_14]
 FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_8, FLAME_MESSAGE_9, FLAME_MESSAGE_12, FLAME_MESSAGE_13]
 
 headers = {"X-Riot-Token": os.environ.get("RIOT_API_TOKEN")}
@@ -168,7 +171,7 @@ def get_data_for_user(summoner_name):
     strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, ")
     strings.append(summoner_name + " finished " + str(rank) + "/8.")
 
-    return strings
+    FRIENDS_DATA[summoner_name] = strings
 
 
 # on message to discord channel
@@ -176,15 +179,18 @@ def get_data_for_user(summoner_name):
 async def on_message(message):
     # displays information for all players
     if message.content == ".refresh":
-        friend_strings_list = [get_data_for_user(friend) for friend in LIST_OF_FRIENDS]
+        for friend in LIST_OF_FRIENDS:
+            if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                get_data_for_user(friend)
+                FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+        friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
         friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
         for friend_strings in friend_strings_list:
-            friend = friend_strings[0].split(" ")[0]
-            if friend == "alostaz47" or friend == "SaltySandyHS":
-                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + friend_strings[3] + " " + friend_strings[4], color=discord.Colour.teal())
-                # displays last comp played
-                embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
-                await message.channel.send(embed=embed)
+            friend = " ".join(friend_strings[0].split(" ")[:-6])
+            embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + friend_strings[3] + " " + friend_strings[4], color=discord.Colour.teal())
+            # displays last comp played
+            embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
+            await message.channel.send(embed=embed)
     # flames hani
     if message.content == ".flamehani":
         if get_last_ranking("alostaz47"):
