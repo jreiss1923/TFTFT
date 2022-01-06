@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import random
 import roman
 import functools
+import traceback
 
 load_dotenv()
 
@@ -45,6 +46,18 @@ items_data = json.load(items_file)
 
 client = discord.Client()
 
+# converts datetime to a timedelta string
+def time_to_timedelta(datetime_str):
+    format = "%Y-%m-%d %H:%M:%S.%f"
+    datetime_obj = datetime.datetime.strptime(datetime_str, format)
+
+    timedelta = (datetime.datetime.now() - datetime_obj)
+    hours = timedelta.seconds // 3600
+    minutes = timedelta.seconds // 60 - hours * 60
+    seconds = timedelta.seconds - hours * 3600 - minutes * 60
+
+    date_str = str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, and " + str(seconds) + " seconds ago, "
+    return date_str
 
 # compares ranks of users given the list of strings from user output
 def compare_ranks(list_of_strings_1, list_of_strings_2):
@@ -146,10 +159,7 @@ def get_data_for_user(summoner_name):
 
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
 
-    timedelta = datetime.datetime.now() - datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
-    hours = timedelta.seconds//3600
-    minutes = timedelta.seconds//60 - hours * 60
-    seconds = timedelta.seconds - hours * 3600 - minutes * 60
+    timedelta = datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
 
     rank = -1
 
@@ -170,7 +180,7 @@ def get_data_for_user(summoner_name):
                     strings[2] += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
             rank = player['placement']
 
-    strings.append(str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(seconds) + " seconds ago, ")
+    strings.append(str(timedelta))
     strings.append(summoner_name + " finished " + str(rank) + "/8.")
 
     FRIENDS_DATA[summoner_name] = strings
@@ -190,7 +200,7 @@ async def on_message(message):
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
             for friend_strings in friend_strings_list:
                 friend = " ".join(friend_strings[0].split(" ")[:-6])
-                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + friend_strings[4], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + friend_strings[4], color=discord.Colour.teal())
                 # displays last comp played
                 embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
                 await message.channel.send(embed=embed)
@@ -226,6 +236,8 @@ async def on_message(message):
     except Exception as e:
         await message.channel.send(e)
         await message.channel.send(repr(e))
+        traceback.print_exc()
+        print(repr(e))
 
 
 # sends message to channel if new game played, checks every 60 seconds
