@@ -179,47 +179,53 @@ def get_data_for_user(summoner_name):
 # on message to discord channel
 @client.event
 async def on_message(message):
-    # displays information for all players
-    if message.content == ".refresh":
-        for friend in LIST_OF_FRIENDS:
-            if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                get_data_for_user(friend)
-                FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
-        friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
-        friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
-        for friend_strings in friend_strings_list:
-            friend = " ".join(friend_strings[0].split(" ")[:-6])
-            embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + friend_strings[3] + " " + friend_strings[4], color=discord.Colour.teal())
-            # displays last comp played
-            embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
-            await message.channel.send(embed=embed)
-    # flames hani
-    if message.content == ".flamehani":
-        if get_last_ranking("alostaz47"):
-            insult = random.choice(FLAME_MESSAGE_LIST_HANI)
-            await message.channel.send(insult)
-        else:
-            await message.channel.send("You can't flame Hani just yet...\n...but he does have a crippling addiction")
-    # flames sandy
-    if message.content == ".flamesandy":
-        if get_last_ranking("SaltySandyHS"):
-            insult = random.choice(FLAME_MESSAGE_LIST_SANDY)
-            await message.channel.send(insult)
-        else:
-            await message.channel.send("I feel bad insulting Sandy now it's like kicking a dead deer")
-    # flames jreiss
-    if message.content == ".flamejreiss":
-        if get_last_ranking("ExistToCease"):
-            insult = random.choice(FLAME_MESSAGE_LIST_JREISS)
-            await message.channel.send(insult)
-    # help command
-    elif message.content == ".help":
-        embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
-        embed.add_field(name="Refresh", value=".refresh: Displays recent information about users' last game and current ranking.", inline=False)
-        embed.add_field(name="Flame a friend", value=".flamehani: Flames Hani if he bot 4ed the last game\n.flamesandy: Flames Sandy if he bot 4ed the last game", inline=False)
-        embed.add_field(name="Help", value=".help: Displays this message.", inline=False)
+    try:
+        # displays information for all players
+        if message.content == ".refresh":
+            for friend in LIST_OF_FRIENDS:
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                    get_data_for_user(friend)
+                    FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+            friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
+            friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
+            for friend_strings in friend_strings_list:
+                friend = " ".join(friend_strings[0].split(" ")[:-6])
+                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + friend_strings[4], color=discord.Colour.teal())
+                # displays last comp played
+                embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
+                await message.channel.send(embed=embed)
+        # flames hani
+        if message.content == ".flamehani":
+            if get_last_ranking("alostaz47"):
+                insult = random.choice(FLAME_MESSAGE_LIST_HANI)
+                await message.channel.send(insult)
+            else:
+                await message.channel.send("You can't flame Hani just yet...\n...but he does have a crippling addiction")
+        # flames sandy
+        if message.content == ".flamesandy":
+            if get_last_ranking("SaltySandyHS"):
+                insult = random.choice(FLAME_MESSAGE_LIST_SANDY)
+                await message.channel.send(insult)
+            else:
+                await message.channel.send("I feel bad insulting Sandy now it's like kicking a dead deer")
+        # flames jreiss
+        if message.content == ".flamejreiss":
+            if get_last_ranking("ExistToCease"):
+                insult = random.choice(FLAME_MESSAGE_LIST_JREISS)
+                await message.channel.send(insult)
+            else:
+                await message.channel.send("He actually got a top 4 :o")
+        # help command
+        elif message.content == ".help":
+            embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
+            embed.add_field(name="Refresh", value=".refresh: Displays recent information about users' last game and current ranking.", inline=False)
+            embed.add_field(name="Flame a friend", value=".flamehani: Flames Hani if he bot 4ed the last game\n.flamesandy: Flames Sandy if he bot 4ed the last game", inline=False)
+            embed.add_field(name="Help", value=".help: Displays this message.", inline=False)
 
-        await message.channel.send(embed=embed)
+            await message.channel.send(embed=embed)
+    except Exception as e:
+        await message.channel.send(e)
+        await message.channel.send(repr(e))
 
 
 # sends message to channel if new game played, checks every 60 seconds
@@ -229,27 +235,32 @@ async def game_played_tracker():
     # test -> general and pat harem -> rito daddy
     channel_test = client.get_channel(458644594905710595)
     channel_rito_daddy = client.get_channel(926942218974019665)
-
-    for friend in LIST_OF_FRIENDS:
-        recent_match = get_most_recent_match(friend)
-        # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-        if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
-            get_data_for_user(friend)
-            strings = FRIENDS_DATA[friend]
-            ranking_str = ""
-            if get_last_ranking(friend):
-                ranking_str = "bot 4"
-            else:
-                ranking_str = "top 4"
-            embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[4], color=discord.Colour.teal())
-            # displays last comp played
-            embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
-            await channel_test.send(embed=embed)
-            await channel_rito_daddy.send(embed=embed)
-            FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
-        # just add older games to last game played
-        elif FRIENDS_LAST_GAME_PLAYED[friend] != recent_match:
-            FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
+    try:
+        for friend in LIST_OF_FRIENDS:
+            recent_match = get_most_recent_match(friend)
+            # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
+            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
+                get_data_for_user(friend)
+                strings = FRIENDS_DATA[friend]
+                ranking_str = ""
+                if get_last_ranking(friend):
+                    ranking_str = "bot 4"
+                else:
+                    ranking_str = "top 4"
+                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[4], color=discord.Colour.teal())
+                # displays last comp played
+                embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
+                await channel_test.send(embed=embed)
+                await channel_rito_daddy.send(embed=embed)
+                FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
+            # just add older games to last game played
+            elif FRIENDS_LAST_GAME_PLAYED[friend] != recent_match:
+                FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
+    except Exception as e:
+        await channel_test.send(e)
+        await channel_test.send(repr(e))
+        await channel_rito_daddy.send(e)
+        await channel_rito_daddy.send(repr(e))
 
 game_played_tracker.start()
 client.run(os.getenv("DISCORD_TOKEN"))
