@@ -9,6 +9,7 @@ import random
 import roman
 import functools
 import traceback
+import psycopg2
 
 load_dotenv()
 
@@ -118,6 +119,7 @@ def get_last_ranking(summoner_name):
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
     response_matches = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/" + response_ids['puuid'] + "/ids?count=1", headers=headers).content.decode())
+    print(response_matches)
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
 
     rank = -1
@@ -234,10 +236,8 @@ async def on_message(message):
 
             await message.channel.send(embed=embed)
     except Exception as e:
-        await message.channel.send(e)
-        await message.channel.send(repr(e))
-        traceback.print_exc()
-        print(repr(e))
+        traceback_str = ''.join(traceback.format_exception(None, e, e.__traceback__))
+        await message.channel.send(traceback_str)
 
 
 # sends message to channel if new game played, checks every 60 seconds
@@ -269,10 +269,8 @@ async def game_played_tracker():
             elif FRIENDS_LAST_GAME_PLAYED[friend] != recent_match:
                 FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
     except Exception as e:
-        await channel_test.send(e)
-        await channel_test.send(repr(e))
-        await channel_rito_daddy.send(e)
-        await channel_rito_daddy.send(repr(e))
+        traceback_str = ''.join(traceback.format_exception(None, e, e.__traceback__))
+        await channel_test.send(traceback_str)
 
 game_played_tracker.start()
 client.run(os.getenv("DISCORD_TOKEN"))
