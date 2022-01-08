@@ -35,8 +35,9 @@ FLAME_MESSAGE_12 = "Must've been a glitch!"
 FLAME_MESSAGE_13 = "cosine waving i see you"
 FLAME_MESSAGE_14 = "new master duel video dropped"
 FLAME_MESSAGE_15 = "at least he can finish a tft game quickly"
+FLAME_MESSAGE_16 = ":hanium:"
 
-FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11, FLAME_MESSAGE_12, FLAME_MESSAGE_14]
+FLAME_MESSAGE_LIST_HANI = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_7, FLAME_MESSAGE_10, FLAME_MESSAGE_11, FLAME_MESSAGE_12, FLAME_MESSAGE_14, FLAME_MESSAGE_16]
 FLAME_MESSAGE_LIST_SANDY = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_3, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_8, FLAME_MESSAGE_9, FLAME_MESSAGE_12, FLAME_MESSAGE_13]
 FLAME_MESSAGE_LIST_JREISS = [FLAME_MESSAGE_1, FLAME_MESSAGE_2, FLAME_MESSAGE_4, FLAME_MESSAGE_5, FLAME_MESSAGE_6, FLAME_MESSAGE_10, FLAME_MESSAGE_12, FLAME_MESSAGE_15]
 
@@ -119,7 +120,6 @@ def get_last_ranking(summoner_name):
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
     response_matches = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/" + response_ids['puuid'] + "/ids?count=1", headers=headers).content.decode())
-    print(response_matches)
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
 
     rank = -1
@@ -193,9 +193,9 @@ def get_data_for_user(summoner_name):
 async def on_message(message):
     try:
         # displays information for all players
-        if message.content == ".refresh":
+        if message.content == ".refreshverbose":
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
                     get_data_for_user(friend)
                     FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
@@ -206,22 +206,53 @@ async def on_message(message):
                 # displays last comp played
                 embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
                 await message.channel.send(embed=embed)
+        elif message.content.split(" ")[0] == ".refreshverbose":
+            friend = " ".join(message.content.split(" ")[1:])
+            if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                get_data_for_user(friend)
+                FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+            friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
+            for friend_strings in friend_strings_list:
+                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + friend_strings[4], color=discord.Colour.teal())
+                # displays last comp played
+                embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
+                await message.channel.send(embed=embed)
+        elif message.content == ".refresh":
+            for friend in LIST_OF_FRIENDS:
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                    get_data_for_user(friend)
+                    FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+            friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
+            friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
+            for friend_strings in friend_strings_list:
+                friend = " ".join(friend_strings[0].split(" ")[:-6])
+                embed = discord.Embed(title=friend, description=friend_strings[0], color=discord.Colour.teal())
+                await message.channel.send(embed=embed)
+        elif message.content.split(" ")[0] == ".refresh":
+            friend = " ".join(message.content.split(" ")[1:])
+            if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                get_data_for_user(friend)
+                FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+            friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
+            for friend_strings in friend_strings_list:
+                embed = discord.Embed(title=friend, description=friend_strings[0], color=discord.Colour.teal())
+                await message.channel.send(embed=embed)
         # flames hani
-        if message.content == ".flamehani":
+        elif message.content == ".flamehani":
             if get_last_ranking("alostaz47"):
                 insult = random.choice(FLAME_MESSAGE_LIST_HANI)
                 await message.channel.send(insult)
             else:
                 await message.channel.send("You can't flame Hani just yet...\n...but he does have a crippling addiction")
         # flames sandy
-        if message.content == ".flamesandy":
+        elif message.content == ".flamesandy":
             if get_last_ranking("SaltySandyHS"):
                 insult = random.choice(FLAME_MESSAGE_LIST_SANDY)
                 await message.channel.send(insult)
             else:
                 await message.channel.send("I feel bad insulting Sandy now it's like kicking a dead deer")
         # flames jreiss
-        if message.content == ".flamejreiss":
+        elif message.content == ".flamejreiss":
             if get_last_ranking("ExistToCease"):
                 insult = random.choice(FLAME_MESSAGE_LIST_JREISS)
                 await message.channel.send(insult)
