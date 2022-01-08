@@ -261,8 +261,9 @@ async def on_message(message):
         # help command
         elif message.content == ".help":
             embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
-            embed.add_field(name="Refresh", value=".refresh: Displays recent information about users' last game and current ranking.", inline=False)
-            embed.add_field(name="Flame a friend", value=".flamehani: Flames Hani if he bot 4ed the last game\n.flamesandy: Flames Sandy if he bot 4ed the last game", inline=False)
+            embed.add_field(name="Refresh", value=".refresh: Displays recent information about users and their current ranking.\n.refresh [player_name]: Displays information about a specific user.", inline=False)
+            embed.add_field(name="Refresh (Verbose)", value=".refreshverbose: Displays more information about users' last comps and game data.\n.refreshverbose [player_name]: Displays more information about a specific user.", inline=False)
+            embed.add_field(name="Flame a friend", value=".flamehani: Flames Hani if he bot 4ed the last game.\n.flamesandy: Flames Sandy if he bot 4ed the last game.\n.flamejreiss: Flames jreiss if he bot 4ed the last game.", inline=False)
             embed.add_field(name="Help", value=".help: Displays this message.", inline=False)
 
             await message.channel.send(embed=embed)
