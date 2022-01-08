@@ -224,10 +224,11 @@ async def on_message(message):
                     FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
+            embed = discord.Embed(title="Refreshed Data", color=discord.Colour.teal())
             for friend_strings in friend_strings_list:
                 friend = " ".join(friend_strings[0].split(" ")[:-6])
-                embed = discord.Embed(title=friend, description=friend_strings[0], color=discord.Colour.teal())
-                await message.channel.send(embed=embed)
+                embed.add_field(name=friend, value=friend_strings[0], inline=False)
+            await message.channel.send(embed=embed)
         elif message.content.split(" ")[0] == ".refresh":
             friend = " ".join(message.content.split(" ")[1:])
             if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
