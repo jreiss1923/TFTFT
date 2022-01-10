@@ -22,10 +22,10 @@ conn = psycopg2.connect(
 
 cur = conn.cursor()
 
-LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw", "izone tft player"]
-FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
-FRIENDS_LAST_GAME_IN_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
-FRIENDS_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
+LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw", "izone tft player", "I am a Female"]
+FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None}
+FRIENDS_LAST_GAME_IN_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None}
+FRIENDS_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None}
 
 RANKING_DICT = {"CHALLENGER":0, "GRANDMASTER":1, "MASTER":2, "DIAMOND":3, "PLATINUM":4, "GOLD":5, "SILVER":6, "BRONZE":7, "IRON":8}
 
@@ -57,22 +57,34 @@ items_data = json.load(items_file)
 
 client = discord.Client()
 
+
+# helper to update or add row
+def add_data_check(user):
+    query = '''SELECT COUNT(*) FROM player WHERE name=\'''' + user + '''\''''
+    cur.execute(query)
+
+    if cur.fetchall()[0][0] != 1:
+        return "UPDATE"
+    else:
+        return "ADD"
+
+
 # updates user data if not in database
-#def update_data(users_to_update, message):
-#   query = '''SELECT COUNT(*) FROM server WHERE id = ''' + str(message.guild.id)
-#    cur.execute(query)
+def update_data(users_to_update, message):
+    query = '''SELECT COUNT(*) FROM server WHERE id = ''' + str(message.guild.id)
+    cur.execute(query)
 
-#    if cur.fetchall()[0][0] != 1:
-#        cur.execute('''INSERT INTO server(id, prefix, default_channel) VALUES(''' + str(message.guild.id) + ''', ., ''' + str(message.channel.id) + ''')''')
-#        conn.commit()
+    if cur.fetchall()[0][0] != 1:
+        cur.execute('''INSERT INTO server(id, prefix, default_channel) VALUES(''' + str(message.guild.id) + ''', ., ''' + str(message.channel.id) + ''')''')
+        conn.commit()
 
-#    for user in users_to_update:
-#        query = '''SELECT * from player WHERE name=\'jreiss1923\''''
-#        cur.execute(query)
+    for user in users_to_update:
+        query = '''SELECT * from player WHERE name=\'jreiss1923\''''
+        cur.execute(query)
 
-#        arr = cur.fetchall()
-#        if len(arr) == 0 or arr[0][7] != FRIENDS_LAST_GAME_PLAYED[user]:
-#            get_data_for_user(user)
+        arr = cur.fetchall()
+        if len(arr) == 0 or arr[0][7] != FRIENDS_LAST_GAME_PLAYED[user]:
+            get_data_for_user(user)
 
 
 # converts datetime to a timedelta string
@@ -222,7 +234,7 @@ async def on_message(message):
         if message.content == ".refreshverbose":
             #update_data(LIST_OF_FRIENDS, message)
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
                     get_data_for_user(friend)
                     FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
@@ -246,7 +258,7 @@ async def on_message(message):
                 await message.channel.send(embed=embed)
         elif message.content == ".refresh":
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
                     get_data_for_user(friend)
                     FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
