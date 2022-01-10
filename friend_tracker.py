@@ -137,7 +137,7 @@ def get_item_name(item_id):
 def get_timedelta(match_id):
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + match_id, headers=headers).content.decode())
 
-    timedelta = datetime.datetime.now() - datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3 + int(response_recent_match['info']['game_length']))
+    timedelta = datetime.datetime.now() - datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
 
     return timedelta.seconds
 
@@ -186,7 +186,7 @@ def get_data_for_user(summoner_name):
     response_matches = [get_most_recent_match(summoner_name)]
 
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
-    timedelta = datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3 + int(response_recent_match['info']['game_length']))
+    timedelta = datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
 
     rank = -1
 
@@ -240,7 +240,7 @@ async def on_message(message):
                 FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
             for friend_strings in friend_strings_list:
-                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + friend_strings[4], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + " " + friend + " finished " + friend_strings[4] + "/8.", color=discord.Colour.teal())
                 # displays last comp played
                 embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
                 await message.channel.send(embed=embed)
@@ -311,7 +311,7 @@ async def game_played_tracker():
         for friend in LIST_OF_FRIENDS:
             recent_match = get_most_recent_match(friend)
             # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
+            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 600:
                 get_data_for_user(friend)
                 strings = FRIENDS_DATA[friend]
                 ranking_str = ""
