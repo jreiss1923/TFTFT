@@ -311,7 +311,7 @@ async def game_played_tracker():
         for friend in LIST_OF_FRIENDS:
             recent_match = get_most_recent_match(friend)
             # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 600:
+            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
                 get_data_for_user(friend)
                 strings = FRIENDS_DATA[friend]
                 ranking_str = ""
@@ -319,7 +319,7 @@ async def game_played_tracker():
                     ranking_str = "bot 4"
                 else:
                     ranking_str = "top 4"
-                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + strings[4], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + friend + " finished " + strings[4] + "/8.", color=discord.Colour.teal())
                 # displays last comp played
                 embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
                 await channel_test.send(embed=embed)
