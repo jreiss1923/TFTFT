@@ -13,6 +13,15 @@ import psycopg2
 
 load_dotenv()
 
+conn = psycopg2.connect(
+    host=os.environ.get("HOST"),
+    database=os.environ.get("DATABASE"),
+    user=os.environ.get("USER"),
+    password=os.environ.get("PASSWORD")
+)
+
+cur = conn.cursor()
+
 LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw", "izone tft player"]
 FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
 FRIENDS_LAST_GAME_IN_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None}
@@ -47,6 +56,24 @@ items_file = open('items.json')
 items_data = json.load(items_file)
 
 client = discord.Client()
+
+# updates user data if not in database
+#def update_data(users_to_update, message):
+#   query = '''SELECT COUNT(*) FROM server WHERE id = ''' + str(message.guild.id)
+#    cur.execute(query)
+
+#    if cur.fetchall()[0][0] != 1:
+#        cur.execute('''INSERT INTO server(id, prefix, default_channel) VALUES(''' + str(message.guild.id) + ''', ., ''' + str(message.channel.id) + ''')''')
+#        conn.commit()
+
+#    for user in users_to_update:
+#        query = '''SELECT * from player WHERE name=\'jreiss1923\''''
+#        cur.execute(query)
+
+#        arr = cur.fetchall()
+#        if len(arr) == 0 or arr[0][7] != FRIENDS_LAST_GAME_PLAYED[user]:
+#            get_data_for_user(user)
+
 
 # converts datetime to a timedelta string
 def time_to_timedelta(datetime_str):
@@ -110,7 +137,7 @@ def get_item_name(item_id):
 def get_timedelta(match_id):
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + match_id, headers=headers).content.decode())
 
-    timedelta = datetime.datetime.now() - datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
+    timedelta = datetime.datetime.now() - datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3 + int(response_recent_match['info']['game_length']))
 
     return timedelta.seconds
 
@@ -137,7 +164,6 @@ def get_last_ranking(summoner_name):
 def get_most_recent_match(summoner_name):
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
-
     response_matches = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/" + response_ids['puuid'] + "/ids?count=1", headers=headers).content.decode())
     return response_matches[0]
 
@@ -160,8 +186,7 @@ def get_data_for_user(summoner_name):
     response_matches = [get_most_recent_match(summoner_name)]
 
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
-
-    timedelta = datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
+    timedelta = datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3 + int(response_recent_match['info']['game_length']))
 
     rank = -1
 
@@ -183,7 +208,8 @@ def get_data_for_user(summoner_name):
             rank = player['placement']
 
     strings.append(str(timedelta))
-    strings.append(summoner_name + " finished " + str(rank) + "/8.")
+    strings.append(str(rank))
+    strings.append(str(response_matches[0]))
 
     FRIENDS_DATA[summoner_name] = strings
 
@@ -194,6 +220,7 @@ async def on_message(message):
     try:
         # displays information for all players
         if message.content == ".refreshverbose":
+            #update_data(LIST_OF_FRIENDS, message)
             for friend in LIST_OF_FRIENDS:
                 if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
                     get_data_for_user(friend)
@@ -202,7 +229,7 @@ async def on_message(message):
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
             for friend_strings in friend_strings_list:
                 friend = " ".join(friend_strings[0].split(" ")[:-6])
-                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + friend_strings[4], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + " " + friend + " finished " + friend_strings[4] + "/8.", color=discord.Colour.teal())
                 # displays last comp played
                 embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
                 await message.channel.send(embed=embed)
