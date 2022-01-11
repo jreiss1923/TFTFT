@@ -90,8 +90,8 @@ def update_data(users_to_update, message):
 # converts datetime to a timedelta string
 def time_to_timedelta(td_int):
 
-    datetime_str = str(datetime.datetime.fromtimestamp(td_int / 1e3))
-    format = "%Y-%m-%d %H:%M:%S.%f"
+    datetime_str = str(datetime.datetime.fromtimestamp(float(td_int)))
+    format = "%Y-%m-%d %H:%M:%S"
     datetime_obj = datetime.datetime.strptime(datetime_str, format)
 
     timedelta = (datetime.datetime.now() - datetime_obj)
