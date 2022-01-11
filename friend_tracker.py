@@ -58,6 +58,31 @@ items_data = json.load(items_file)
 client = discord.Client()
 
 
+# retrieves user data as list of strings from db
+def get_data_from_db(user):
+
+    strings = []
+
+    query = '''SELECT COUNT(*) FROM player WHERE name=\'''' + user + '''\''''
+    cur.execute(query)
+
+    if cur.fetchall()[0][0] > 0:
+        query = '''SELECT * FROM player WHERE name=\'''' + user + '''\''''
+        cur.execute(query)
+
+        user_info = cur.fetchall()
+
+        strings.append(user_info[0][0].rstrip())
+        strings.append(user_info[0][2].rstrip())
+        strings.append(time_to_timedelta(user_info[0][3]))
+        strings.append(" went " + str(user_info[0][4]) + "/8.")
+        strings.append(user_info[0][5].rstrip())
+        strings.append(user_info[0][6].rstrip().replace("$", "\'").replace(";", "\n"))
+        strings.append(user_info[0][7].rstrip())
+
+        FRIENDS_DATA[user] = strings
+
+
 # helper to update or add row
 def add_data_check(user):
     query = '''SELECT COUNT(*) FROM player WHERE name=\'''' + user + '''\''''
@@ -70,27 +95,30 @@ def add_data_check(user):
 
 
 # updates user data if not in database
-def update_data(users_to_update, message):
-    query = '''SELECT COUNT(*) FROM server WHERE id = ''' + str(message.guild.id)
+def update_data(message_server):
+    #query = '''SELECT COUNT(*) FROM server WHERE id = ''' + str(message.guild.id)
+    #cur.execute(query)
+
+    #if cur.fetchall()[0][0] != 1:
+    #    cur.execute('''INSERT INTO server(id, prefix, default_channel) VALUES(''' + str(message.guild.id) + ''', ., ''' + str(message.channel.id) + ''')''')
+    #    conn.commit()
+
+    query = '''SELECT * from player'''
     cur.execute(query)
+    arr = cur.fetchall()
 
-    if cur.fetchall()[0][0] != 1:
-        cur.execute('''INSERT INTO server(id, prefix, default_channel) VALUES(''' + str(message.guild.id) + ''', ., ''' + str(message.channel.id) + ''')''')
-        conn.commit()
-
-    for user in users_to_update:
-        query = '''SELECT * from player WHERE name=\'''' + user + '''\''''
-        cur.execute(query)
-
-        arr = cur.fetchall()
-        if len(arr) == 0 or arr[0][7] != FRIENDS_LAST_GAME_PLAYED[user]:
-            get_data_for_user(user, message.guild.id)
+    for element in arr:
+        user = element[0].rstrip()
+        server = element[1]
+        if user in LIST_OF_FRIENDS and server == message_server:
+            if len(arr) == 0 or element[7].rstrip(" ") != FRIENDS_LAST_GAME_PLAYED[user]:
+                get_data_for_user(user, message_server)
 
 
 # converts datetime to a timedelta string
-def time_to_timedelta(td_int):
+def time_to_timedelta(timedelta_str):
 
-    datetime_str = str(datetime.datetime.fromtimestamp(float(td_int)))
+    datetime_str = str(datetime.datetime.fromtimestamp(float(timedelta_str)))
     format = "%Y-%m-%d %H:%M:%S"
     datetime_obj = datetime.datetime.strptime(datetime_str, format)
 
@@ -106,8 +134,8 @@ def time_to_timedelta(td_int):
 # compares ranks of users given the list of strings from user output
 def compare_ranks(list_of_strings_1, list_of_strings_2):
 
-    rank_str_1 = list_of_strings_1[0]
-    rank_str_2 = list_of_strings_2[0]
+    rank_str_1 = list_of_strings_1[1].rstrip()
+    rank_str_2 = list_of_strings_2[1].rstrip()
 
     rank_1 = RANKING_DICT.get(rank_str_1.split(" ")[-4])
     rank_2 = RANKING_DICT.get(rank_str_2.split(" ")[-4])
@@ -186,8 +214,6 @@ def get_most_recent_match(summoner_name):
 # returns two strings, one with rank info and one with last game played info
 def get_data_for_user(summoner_name, server_id):
 
-    strings = []
-
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
     response_rank = json.loads(requests.get("https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/" + response_ids["id"], headers=headers).content.decode())
 
@@ -196,19 +222,19 @@ def get_data_for_user(summoner_name, server_id):
         if queue['queueType'] == 'RANKED_TFT':
             response_rank = queue
 
-    strings.append(summoner_name + " is currently " + response_rank['tier'] + " " + response_rank['rank'] + ", " + str(response_rank['leaguePoints']) + " LP.")
+    rank = summoner_name + " is currently " + response_rank['tier'] + " " + response_rank['rank'] + ", " + str(response_rank['leaguePoints']) + " LP."
 
     response_matches = [get_most_recent_match(summoner_name)]
 
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
     timedelta = int(response_recent_match['info']['game_datetime'] / 1e3)
 
-    rank = -1
+    last_placement = -1
 
     trait_str = ""
     comp_str = ""
 
-    # gets rank, items for queried player
+    # gets last placement, items for queried player
     for player in response_recent_match['info']['participants']:
         if player['puuid'] == response_ids['puuid']:
             for trait in player['traits']:
@@ -221,25 +247,17 @@ def get_data_for_user(summoner_name, server_id):
                     comp_str += " No items\n"
                 else:
                     comp_str += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
-            rank = player['placement']
-
-    strings.append(trait_str)
-    strings.append(comp_str)
-    strings.append(str(timedelta))
-    strings.append(str(rank))
-    strings.append(str(response_matches[0]))
-
-    FRIENDS_DATA[summoner_name] = strings
+            last_placement = player['placement']
 
     checker = add_data_check(summoner_name)
 
     if checker == "ADD":
         query = '''INSERT INTO player(name, server_id, rank, timedelta, last_placement, traits, comp, match_id) 
-        VALUES(\'''' + summoner_name + '''\', ''' + str(server_id) + ''', ''' + str(rank) + ''', ''' + str(timedelta) + ''', ''' + str(rank) + ''', \'''' + trait_str + '''\', \'''' + comp_str.replace("'", "$").replace("\n", ";") + '''\', \'''' + response_matches[0] + '''\')'''
+        VALUES(\'''' + summoner_name + '''\', ''' + str(server_id) + ''', \'''' + str(rank) + '''\', ''' + str(timedelta) + ''', ''' + str(last_placement) + ''', \'''' + trait_str + '''\', \'''' + comp_str.replace("'", "$").replace("\n", ";") + '''\', \'''' + response_matches[0] + '''\')'''
         cur.execute(query)
     elif checker == "UPDATE":
         query = '''UPDATE player
-        SET rank=''' + str(rank) + ''', timedelta=''' + str(timedelta) + ''', last_placement=''' + str(rank) + ''', traits=\'''' + trait_str + '''\', comp=\'''' + comp_str.replace("'", "$").replace("\n", ";") + '''\', match_id=\'''' + response_matches[0] + '''\' WHERE name=\'''' + summoner_name + '''\''''
+        SET rank=\'''' + str(rank) + '''\', timedelta=''' + str(timedelta) + ''', last_placement=''' + str(last_placement) + ''', traits=\'''' + trait_str + '''\', comp=\'''' + comp_str.replace("'", "$").replace("\n", ";") + '''\', match_id=\'''' + response_matches[0] + '''\' WHERE name=\'''' + summoner_name + '''\''''
         cur.execute(query)
 
     conn.commit()
@@ -251,50 +269,43 @@ async def on_message(message):
     try:
         # displays information for all players
         if message.content == ".refreshverbose":
-            #update_data(LIST_OF_FRIENDS, message)
+            update_data(message.guild.id)
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female" or friend == "Awesomephil7") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                    get_data_for_user(friend, message.guild.id)
-                    FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+                get_data_from_db(friend)
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
             for friend_strings in friend_strings_list:
-                friend = " ".join(friend_strings[0].split(" ")[:-6])
-                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + " " + friend + " finished " + friend_strings[4] + "/8.", color=discord.Colour.teal())
+                embed = discord.Embed(title=friend_strings[0], description=friend_strings[1] + "\n" + friend_strings[2] + friend_strings[3], color=discord.Colour.teal())
                 # displays last comp played
-                embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
+                embed.add_field(name="Last Comp:", value=friend_strings[4] + "\n\n" + friend_strings[5], inline=False)
                 await message.channel.send(embed=embed)
         elif message.content.split(" ")[0] == ".refreshverbose":
             friend = " ".join(message.content.split(" ")[1:])
-            if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                get_data_for_user(friend, message.guild.id)
-                FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
-            friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
+            update_data(message.guild.id)
+            get_data_from_db(friend)
+            friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and friend_string[0] == friend]
             for friend_strings in friend_strings_list:
-                embed = discord.Embed(title=friend, description=friend_strings[0] + "\n" + time_to_timedelta(friend_strings[3]) + " " + friend + " finished " + friend_strings[4] + "/8.", color=discord.Colour.teal())
+                embed = discord.Embed(title=friend_strings[0], description=friend_strings[1] + "\n" + friend_strings[2] + friend_strings[3], color=discord.Colour.teal())
                 # displays last comp played
-                embed.add_field(name="Last Comp:", value=friend_strings[1] + "\n\n" + friend_strings[2], inline=False)
+                embed.add_field(name="Last Comp:", value=friend_strings[4] + "\n\n" + friend_strings[5], inline=False)
                 await message.channel.send(embed=embed)
         elif message.content == ".refresh":
+            update_data(message.guild.id)
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female" or friend == "Awesomephil7") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                    get_data_for_user(friend, message.guild.id)
-                    FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
+                get_data_from_db(friend)
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
             embed = discord.Embed(title="Refreshed Data", color=discord.Colour.teal())
             for friend_strings in friend_strings_list:
-                friend = " ".join(friend_strings[0].split(" ")[:-6])
-                embed.add_field(name=friend, value=friend_strings[0], inline=False)
+                embed.add_field(name=friend_strings[0], value=friend_strings[1], inline=False)
             await message.channel.send(embed=embed)
         elif message.content.split(" ")[0] == ".refresh":
             friend = " ".join(message.content.split(" ")[1:])
-            if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                get_data_for_user(friend, message.guild.id)
-                FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
-            friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
+            update_data(message.guild.id)
+            get_data_from_db(friend)
+            friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and friend_string[0] == friend]
             for friend_strings in friend_strings_list:
-                embed = discord.Embed(title=friend, description=friend_strings[0], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend_strings[0], description=friend_strings[1], color=discord.Colour.teal())
                 await message.channel.send(embed=embed)
         # flames hani
         elif message.content == ".flamehani":
@@ -332,7 +343,7 @@ async def on_message(message):
 
 
 # sends message to channel if new game played, checks every 60 seconds
-@tasks.loop(seconds=30)
+@tasks.loop(seconds=60)
 async def game_played_tracker():
     await client.wait_until_ready()
     # test -> general and pat harem -> handy
@@ -342,17 +353,18 @@ async def game_played_tracker():
         for friend in LIST_OF_FRIENDS:
             recent_match = get_most_recent_match(friend)
             # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 600:
-                get_data_for_user(friend, "")
+            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 3000:
+                get_data_for_user(friend, 926942218974019665)
+                get_data_from_db(friend)
                 strings = FRIENDS_DATA[friend]
                 ranking_str = ""
                 if get_last_ranking(friend):
                     ranking_str = "bot 4"
                 else:
                     ranking_str = "top 4"
-                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[0] + "\n" + friend + " finished " + strings[4] + "/8.", color=discord.Colour.teal())
+                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[1] + "\n" + friend + " " + strings[3], color=discord.Colour.teal())
                 # displays last comp played
-                embed.add_field(name="Last Comp:", value=strings[1] + "\n\n" + strings[2], inline=False)
+                embed.add_field(name="Last Comp:", value=strings[4] + "\n\n" + strings[5], inline=False)
                 await channel_test.send(embed=embed)
                 await channel_rito_daddy.send(embed=embed)
                 FRIENDS_LAST_GAME_PLAYED[friend] = recent_match
