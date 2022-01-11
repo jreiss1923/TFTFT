@@ -353,7 +353,7 @@ async def game_played_tracker():
         for friend in LIST_OF_FRIENDS:
             recent_match = get_most_recent_match(friend)
             # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 3000:
+            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
                 get_data_for_user(friend, 926942218974019665)
                 get_data_from_db(friend)
                 strings = FRIENDS_DATA[friend]
