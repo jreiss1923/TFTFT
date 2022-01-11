@@ -22,10 +22,10 @@ conn = psycopg2.connect(
 
 cur = conn.cursor()
 
-LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw", "izone tft player", "I am a Female"]
-FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None}
-FRIENDS_LAST_GAME_IN_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None}
-FRIENDS_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None}
+LIST_OF_FRIENDS = ["SaltySandyHS", "alostaz47", "The Number 3", "ExistToCease", "gura tft player", "gamesuxbtw", "izone tft player", "I am a Female", "Awesomephil7"]
+FRIENDS_LAST_GAME_PLAYED = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None, "Awesomephil7":None}
+FRIENDS_LAST_GAME_IN_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None, "Awesomephil7":None}
+FRIENDS_DATA = {"SaltySandyHS":None, "alostaz47":None, "The Number 3":None, "ExistToCease":None, "gura tft player":None, "gamesuxbtw":None, 'izone tft player':None, "I am a Female":None, "Awesomephil7":None}
 
 RANKING_DICT = {"CHALLENGER":0, "GRANDMASTER":1, "MASTER":2, "DIAMOND":3, "PLATINUM":4, "GOLD":5, "SILVER":6, "BRONZE":7, "IRON":8}
 
@@ -64,9 +64,9 @@ def add_data_check(user):
     cur.execute(query)
 
     if cur.fetchall()[0][0] != 1:
-        return "UPDATE"
-    else:
         return "ADD"
+    else:
+        return "UPDATE"
 
 
 # updates user data if not in database
@@ -79,16 +79,17 @@ def update_data(users_to_update, message):
         conn.commit()
 
     for user in users_to_update:
-        query = '''SELECT * from player WHERE name=\'jreiss1923\''''
+        query = '''SELECT * from player WHERE name=\'''' + user + '''\''''
         cur.execute(query)
 
         arr = cur.fetchall()
         if len(arr) == 0 or arr[0][7] != FRIENDS_LAST_GAME_PLAYED[user]:
-            get_data_for_user(user)
+            get_data_for_user(user, message.guild.id)
 
 
 # converts datetime to a timedelta string
-def time_to_timedelta(datetime_str):
+def time_to_timedelta(td_int):
+    datetime_str = datetime.datetime.fromtimestamp(int(td_int / 1e3))
     format = "%Y-%m-%d %H:%M:%S.%f"
     datetime_obj = datetime.datetime.strptime(datetime_str, format)
 
@@ -99,6 +100,7 @@ def time_to_timedelta(datetime_str):
 
     date_str = str(timedelta.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, and " + str(seconds) + " seconds ago, "
     return date_str
+
 
 # compares ranks of users given the list of strings from user output
 def compare_ranks(list_of_strings_1, list_of_strings_2):
@@ -181,7 +183,7 @@ def get_most_recent_match(summoner_name):
 
 
 # returns two strings, one with rank info and one with last game played info
-def get_data_for_user(summoner_name):
+def get_data_for_user(summoner_name, server_id):
 
     strings = []
 
@@ -198,32 +200,48 @@ def get_data_for_user(summoner_name):
     response_matches = [get_most_recent_match(summoner_name)]
 
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
-    timedelta = datetime.datetime.fromtimestamp(response_recent_match['info']['game_datetime'] / 1e3)
+    timedelta = int(response_recent_match['info']['game_datetime'] / 1e3)
 
     rank = -1
 
+    trait_str = ""
+    comp_str = ""
+
     # gets rank, items for queried player
-    strings.append("")
-    strings.append("")
     for player in response_recent_match['info']['participants']:
         if player['puuid'] == response_ids['puuid']:
             for trait in player['traits']:
                 if trait['tier_current'] != 0:
-                    strings[1] += str(trait['num_units']) + " " + trait['name'][5:] + " "
+                    trait_str += str(trait['num_units']) + " " + trait['name'][5:] + " "
             # gets items and player units
             for unit in player['units']:
-                strings[2] += str(unit['tier']) + " star " + unit['character_id'][5:] + ": "
+                comp_str += str(unit['tier']) + " star " + unit['character_id'][5:] + ": "
                 if len(unit['items']) == 0:
-                    strings[2] += " No items\n"
+                    comp_str += " No items\n"
                 else:
-                    strings[2] += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
+                    comp_str += ", ".join(get_item_name(item_id) for item_id in unit['items']) + "\n"
             rank = player['placement']
 
+    strings.append(trait_str)
+    strings.append(comp_str)
     strings.append(str(timedelta))
     strings.append(str(rank))
     strings.append(str(response_matches[0]))
 
     FRIENDS_DATA[summoner_name] = strings
+
+    checker = add_data_check(summoner_name)
+
+    if checker == "ADD":
+        query = '''INSERT INTO player(name, server_id, rank, timedelta, last_placement, traits, comp, match_id) 
+        VALUES(\'''' + summoner_name + '''\', ''' + str(server_id) + ''', ''' + str(rank) + ''', ''' + str(timedelta) + ''', ''' + str(rank) + ''', \'''' + trait_str + '''\', \'''' + comp_str.replace("'", "$").replace("\n", ";") + '''\', \'''' + response_matches[0] + '''\')'''
+        cur.execute(query)
+    elif checker == "UPDATE":
+        query = '''UPDATE player
+        SET rank=''' + str(rank) + ''', timedelta=''' + str(timedelta) + ''', last_placement=''' + str(rank) + ''', traits=\'''' + trait_str + '''\', comp=\'''' + comp_str.replace("'", "$").replace("\n", ";") + '''\', match_id=\'''' + response_matches[0] + '''\' WHERE name=\'''' + summoner_name + '''\''''
+        cur.execute(query)
+
+    conn.commit()
 
 
 # on message to discord channel
@@ -234,8 +252,8 @@ async def on_message(message):
         if message.content == ".refreshverbose":
             #update_data(LIST_OF_FRIENDS, message)
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                    get_data_for_user(friend)
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female" or friend == "Awesomephil7") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                    get_data_for_user(friend, message.guild.id)
                     FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
@@ -248,7 +266,7 @@ async def on_message(message):
         elif message.content.split(" ")[0] == ".refreshverbose":
             friend = " ".join(message.content.split(" ")[1:])
             if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                get_data_for_user(friend)
+                get_data_for_user(friend, message.guild.id)
                 FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
             for friend_strings in friend_strings_list:
@@ -258,8 +276,8 @@ async def on_message(message):
                 await message.channel.send(embed=embed)
         elif message.content == ".refresh":
             for friend in LIST_OF_FRIENDS:
-                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                    get_data_for_user(friend)
+                if (friend == "alostaz47" or friend == "SaltySandyHS" or friend == "izone tft player" or friend == "ExistToCease" or friend == "gamesuxbtw" or friend == "I am a Female" or friend == "Awesomephil7") and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
+                    get_data_for_user(friend, message.guild.id)
                     FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
             friend_strings_list.sort(key=functools.cmp_to_key(compare_ranks))
@@ -271,7 +289,7 @@ async def on_message(message):
         elif message.content.split(" ")[0] == ".refresh":
             friend = " ".join(message.content.split(" ")[1:])
             if friend in LIST_OF_FRIENDS and (FRIENDS_LAST_GAME_IN_DATA[friend] != FRIENDS_LAST_GAME_PLAYED[friend] or not FRIENDS_DATA[friend]):
-                get_data_for_user(friend)
+                get_data_for_user(friend, message.guild.id)
                 FRIENDS_LAST_GAME_IN_DATA[friend] = FRIENDS_LAST_GAME_PLAYED[friend]
             friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and " ".join(friend_string[0].split(" ")[:-6]) == friend]
             for friend_strings in friend_strings_list:
@@ -313,18 +331,18 @@ async def on_message(message):
 
 
 # sends message to channel if new game played, checks every 60 seconds
-@tasks.loop(seconds=60)
+@tasks.loop(seconds=30)
 async def game_played_tracker():
     await client.wait_until_ready()
-    # test -> general and pat harem -> rito daddy
+    # test -> general and pat harem -> handy
     channel_test = client.get_channel(458644594905710595)
     channel_rito_daddy = client.get_channel(926942218974019665)
     try:
         for friend in LIST_OF_FRIENDS:
             recent_match = get_most_recent_match(friend)
             # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 300:
-                get_data_for_user(friend)
+            if FRIENDS_LAST_GAME_PLAYED[friend] != recent_match and get_timedelta(recent_match) < 600:
+                get_data_for_user(friend, "")
                 strings = FRIENDS_DATA[friend]
                 ranking_str = ""
                 if get_last_ranking(friend):
