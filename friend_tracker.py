@@ -75,7 +75,7 @@ def get_data_from_db(user):
         strings.append(user_info[0][0].rstrip())
         strings.append(user_info[0][2].rstrip())
         strings.append(time_to_timedelta(user_info[0][3]))
-        strings.append(" went " + str(user_info[0][4]) + "/8.")
+        strings.append(strings[0] + " went " + str(user_info[0][4]) + "/8.")
         strings.append(user_info[0][5].rstrip())
         strings.append(user_info[0][6].rstrip().replace("$", "\'").replace(";", "\n"))
         strings.append(user_info[0][7].rstrip())
@@ -362,7 +362,7 @@ async def game_played_tracker():
                     ranking_str = "bot 4"
                 else:
                     ranking_str = "top 4"
-                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[1] + "\n" + friend + " " + strings[3], color=discord.Colour.teal())
+                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[1] + "\n" + strings[3], color=discord.Colour.teal())
                 # displays last comp played
                 embed.add_field(name="Last Comp:", value=strings[4] + "\n\n" + strings[5], inline=False)
                 await channel_test.send(embed=embed)
