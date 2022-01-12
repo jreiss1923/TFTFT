@@ -95,7 +95,7 @@ def add_data_check(user):
 
 
 # updates user data if not in database
-def update_data(message_server):
+def update_data(user_list, message_server):
     #query = '''SELECT COUNT(*) FROM server WHERE id = ''' + str(message.guild.id)
     #cur.execute(query)
 
@@ -103,15 +103,16 @@ def update_data(message_server):
     #    cur.execute('''INSERT INTO server(id, prefix, default_channel) VALUES(''' + str(message.guild.id) + ''', ., ''' + str(message.channel.id) + ''')''')
     #    conn.commit()
 
-    query = '''SELECT * from player'''
-    cur.execute(query)
-    arr = cur.fetchall()
+    for user in user_list:
+        query = '''SELECT * from player where name=\'''' + user + '''\''''
+        cur.execute(query)
+        arr = cur.fetchall()
 
-    for element in arr:
-        user = element[0].rstrip()
-        server = element[1]
-        if user in LIST_OF_FRIENDS and server == message_server:
-            if len(arr) == 0 or element[7].rstrip(" ") != FRIENDS_LAST_GAME_PLAYED[user]:
+        if user in LIST_OF_FRIENDS:
+            if len(arr) == 0:
+                get_data_for_user(user, message_server)
+            elif arr[0][7].rstrip(" ") != FRIENDS_LAST_GAME_PLAYED[user]:
+                #if arr[0][1] == message_server:
                 get_data_for_user(user, message_server)
 
 
@@ -269,7 +270,7 @@ async def on_message(message):
     try:
         # displays information for all players
         if message.content == ".refreshverbose":
-            update_data(message.guild.id)
+            update_data(LIST_OF_FRIENDS, message.guild.id)
             for friend in LIST_OF_FRIENDS:
                 get_data_from_db(friend)
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
@@ -281,7 +282,7 @@ async def on_message(message):
                 await message.channel.send(embed=embed)
         elif message.content.split(" ")[0] == ".refreshverbose":
             friend = " ".join(message.content.split(" ")[1:])
-            update_data(message.guild.id)
+            update_data(LIST_OF_FRIENDS, message.guild.id)
             get_data_from_db(friend)
             friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and friend_string[0] == friend]
             for friend_strings in friend_strings_list:
@@ -290,7 +291,7 @@ async def on_message(message):
                 embed.add_field(name="Last Comp:", value=friend_strings[4] + "\n\n" + friend_strings[5], inline=False)
                 await message.channel.send(embed=embed)
         elif message.content == ".refresh":
-            update_data(message.guild.id)
+            update_data(LIST_OF_FRIENDS, message.guild.id)
             for friend in LIST_OF_FRIENDS:
                 get_data_from_db(friend)
             friend_strings_list = [i for i in list(FRIENDS_DATA.values()) if i]
@@ -301,7 +302,7 @@ async def on_message(message):
             await message.channel.send(embed=embed)
         elif message.content.split(" ")[0] == ".refresh":
             friend = " ".join(message.content.split(" ")[1:])
-            update_data(message.guild.id)
+            update_data(LIST_OF_FRIENDS, message.guild.id)
             get_data_from_db(friend)
             friend_strings_list = [friend_string for friend_string in list(FRIENDS_DATA.values()) if friend_string and friend_string[0] == friend]
             for friend_strings in friend_strings_list:
