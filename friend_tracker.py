@@ -148,6 +148,19 @@ def add_user_to_db(user):
         conn.commit()
 
 
+# deletes user from relation table in db
+def delete_user(message):
+    server = message.guild.id
+    user = " ".join(message.content.split(" ")[1:])
+
+    if user in list(NEEDS_UPDATE.keys()):
+        NEEDS_UPDATE.pop(user)
+
+    query = '''DELETE FROM player_server_relation WHERE player_name=\'''' + user + '''\' AND server_id=''' + str(server)
+    cur.execute(query)
+    conn.commit()
+
+
 # adds user and checks relation in db
 def add_user(message):
     server = message.guild.id
@@ -477,7 +490,8 @@ async def on_message(message):
             add_user(message)
             await message.channel.send(" ".join(message.content.split(" ")[1:]) + " has been added to the list of updated users for " + message.guild.name + ".")
         elif message.content.split(" ")[0] == ".deleteuser":
-            await message.channel.send("Soon TM")
+            delete_user(message)
+            await message.channel.send(" ".join(message.content.split(" ")[1:]) + " has been deleted from the list of updated users for " + message.guild.name + ".")
         # help command
         elif message.content == ".help":
             embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
