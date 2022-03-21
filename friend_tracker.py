@@ -61,7 +61,7 @@ def get_servers_from_player(user):
     cur.execute(query)
 
     server_list = cur.fetchall()
-    return [server[0][0] for server in server_list]
+    return [server[0] for server in server_list]
 
 
 # gets list of players from db
@@ -153,6 +153,8 @@ def add_user(message):
     server = message.guild.id
     user = " ".join(message.content.split(" ")[1:])
 
+    NEEDS_UPDATE[user] = None
+
     query = '''SELECT * FROM player_server_relation WHERE player_name=\'''' + user + '''\' AND server_id=''' + str(server)
     cur.execute(query)
 
@@ -216,7 +218,9 @@ def update_data(user_list):
             get_data_for_user(user)
         # if no last game in db (new user) or needs update
         # then update data and remove user from list of needed updates
-        elif arr[0][6] is None or user in list(NEEDS_UPDATE.keys()):
+        elif arr[0][6] is None:
+            get_data_for_user(user)
+        elif user in list(NEEDS_UPDATE.keys()):
             get_data_for_user(user)
             NEEDS_UPDATE.pop(user)
 
@@ -401,7 +405,6 @@ async def on_message(message):
             for friend_strings in friend_strings_list:
                 embed = discord.Embed(title=friend_strings[0], description=friend_strings[1] + "\n" + friend_strings[2] + friend_strings[3], color=discord.Colour.teal())
                 # displays last comp played
-                print(friend_strings[7])
                 embed.add_field(name="Augments:", value="[1, 2, 3]: " + friend_strings[7], inline=False)
                 embed.add_field(name="Last Comp:", value=friend_strings[4] + "\n\n" + friend_strings[5], inline=False)
                 await message.channel.send(embed=embed)
@@ -418,7 +421,6 @@ async def on_message(message):
             for friend_strings in friend_strings_list:
                 embed = discord.Embed(title=friend_strings[0], description=friend_strings[1] + "\n" + friend_strings[2] + friend_strings[3], color=discord.Colour.teal())
                 # displays last comp played
-                print(friend_strings[7])
                 embed.add_field(name="Augments:", value="[1, 2, 3]: " + friend_strings[7], inline=False)
                 embed.add_field(name="Last Comp:", value=friend_strings[4] + "\n\n" + friend_strings[5], inline=False)
                 await message.channel.send(embed=embed)
@@ -473,12 +475,15 @@ async def on_message(message):
                 await message.channel.send("He actually got a top 4 :o")
         elif message.content.split(" ")[0] == ".adduser":
             add_user(message)
+            await message.channel.send(" ".join(message.content.split(" ")[1:]) + " has been added to the list of updated users for " + message.guild.name + ".")
+        elif message.content.split(" ")[0] == ".deleteuser":
             await message.channel.send("Soon TM")
         # help command
         elif message.content == ".help":
             embed = discord.Embed(title="Command List and Information", description="This bot refreshes every minute to update members of peoples' TFT status.", color=discord.Colour.teal())
             embed.add_field(name="Refresh", value=".refresh: Displays recent information about users and their current ranking.\n.refresh [player_name]: Displays information about a specific user.", inline=False)
             embed.add_field(name="Refresh (Verbose)", value=".refreshverbose: Displays more information about users' last comps and game data.\n.refreshverbose [player_name]: Displays more information about a specific user.", inline=False)
+            embed.add_field(name="Add User", value=".adduser: Add a user to the list of users with information in this server.", inline=False)
             embed.add_field(name="Flame a friend", value=".flamehani: Flames Hani if he bot 4ed the last game.\n.flamesandy: Flames Sandy if he bot 4ed the last game.\n.flamejreiss: Flames jreiss if he bot 4ed the last game.", inline=False)
             embed.add_field(name="Help", value=".help: Displays this message.", inline=False)
 
@@ -501,7 +506,7 @@ async def game_played_tracker():
         for friend in player_list:
             recent_match = get_most_recent_match(friend)
             # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if get_last_game(friend) != recent_match and get_timedelta(recent_match) < 300:
+            if get_last_game(friend) != recent_match and get_timedelta(recent_match) < 3000:
                 get_data_for_user(friend)
                 strings = get_data_from_db(friend)
                 if get_last_ranking(friend):
