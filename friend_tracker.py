@@ -55,6 +55,15 @@ items_data = json.load(items_file)
 client = discord.Client()
 
 
+def check_user_riot(summoner_name):
+    response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
+    if 'status' in response_ids:
+        return response_ids['status']['message'] == "Data not found - summoner not found"
+    else:
+        return len(get_most_recent_match(summoner_name)) != 0
+
+
+
 # gets all servers player is in
 def get_servers_from_player(user):
     query = '''SELECT server_id FROM player_server_relation WHERE player_name=\'''' + user + '''\''''
@@ -79,6 +88,9 @@ def get_last_game(user):
     cur.execute(query)
 
     last_game = cur.fetchall()
+    print(last_game)
+    if last_game[0][0] is None:
+        return "None"
     return last_game[0][0].rstrip()
 
 # get default channel from server
@@ -166,6 +178,10 @@ def add_user(message):
     server = message.guild.id
     user = " ".join(message.content.split(" ")[1:])
 
+    if not check_user_riot(user):
+        print("huh")
+        return False
+
     NEEDS_UPDATE[user] = None
 
     query = '''SELECT * FROM player_server_relation WHERE player_name=\'''' + user + '''\' AND server_id=''' + str(server)
@@ -180,6 +196,8 @@ def add_user(message):
         query = '''INSERT INTO player_server_relation(player_name, server_id) VALUES (\'''' + user + '''\', ''' + str(server) + ''')'''
         cur.execute(query)
         conn.commit()
+
+    return True
 
 
 # retrieves user data as list of strings from db
@@ -340,7 +358,7 @@ def get_most_recent_match(summoner_name):
 
     response_ids = json.loads(requests.get("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summoner_name, headers=headers).content.decode())
     response_matches = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/" + response_ids['puuid'] + "/ids?count=1", headers=headers).content.decode())
-    return response_matches[0]
+    return response_matches
 
 
 # pushes data for last game played to player table
@@ -360,7 +378,7 @@ def get_data_for_user(summoner_name):
     else:
         rank = summoner_name + " is currently " + response_rank['tier'] + " " + response_rank['rank'] + ", " + str(response_rank['leaguePoints']) + " LP."
 
-    response_matches = [get_most_recent_match(summoner_name)]
+    response_matches = [get_most_recent_match(summoner_name)[0]]
 
     response_recent_match = json.loads(requests.get("https://americas.api.riotgames.com/tft/match/v1/matches/" + response_matches[0], headers=headers).content.decode())
     timedelta = int(response_recent_match['info']['game_datetime'] / 1e3)
@@ -487,8 +505,10 @@ async def on_message(message):
             else:
                 await message.channel.send("He actually got a top 4 :o")
         elif message.content.split(" ")[0] == ".adduser":
-            add_user(message)
-            await message.channel.send(" ".join(message.content.split(" ")[1:]) + " has been added to the list of updated users for " + message.guild.name + ".")
+            if add_user(message):
+                await message.channel.send(" ".join(message.content.split(" ")[1:]) + " has been added to the list of updated users for " + message.guild.name + ".")
+            else:
+                await message.channel.send(" ".join(message.content.split(" ")[1:]) + " is not a valid Riot username.")
         elif message.content.split(" ")[0] == ".deleteuser":
             delete_user(message)
             await message.channel.send(" ".join(message.content.split(" ")[1:]) + " has been deleted from the list of updated users for " + message.guild.name + ".")
@@ -518,27 +538,32 @@ async def game_played_tracker():
     channel_test = client.get_channel(458644594905710595)
     try:
         for friend in player_list:
+            print(friend)
             recent_match = get_most_recent_match(friend)
-            # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
-            if get_last_game(friend) != recent_match and get_timedelta(recent_match) < 3000:
-                get_data_for_user(friend)
-                strings = get_data_from_db(friend)
-                if get_last_ranking(friend):
-                    ranking_str = "bot 4"
-                else:
-                    ranking_str = "top 4"
-                embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[1] + "\n" + strings[3], color=discord.Colour.teal())
-                # displays last comp played
-                embed.add_field(name="Augments:", value="[1, 2, 3]: " + strings[7], inline=False)
-                embed.add_field(name="Last Comp:", value=strings[4] + "\n\n" + strings[5], inline=False)
-                user_servers = get_servers_from_player(friend)
-                for server in user_servers:
-                    default_channel = client.get_channel(get_channel_from_server(server))
-                    await default_channel.send(embed=embed)
-                NEEDS_UPDATE[friend] = recent_match
-            # just add older games to last game played
-            elif get_last_game(friend) != recent_match:
-                NEEDS_UPDATE[friend] = recent_match
+            if len(recent_match) > 0:
+                recent_match = recent_match[0]
+                # if match not in history and match played within 5 minutes (avoids duplicate messages on startup)
+                if get_last_game(friend) != recent_match and get_timedelta(recent_match) < 300:
+                    get_data_for_user(friend)
+                    strings = get_data_from_db(friend)
+                    if get_last_ranking(friend):
+                        ranking_str = "bot 4"
+                    else:
+                        ranking_str = "top 4"
+                    embed = discord.Embed(title=friend + " went " + ranking_str, description=strings[1] + "\n" + strings[3], color=discord.Colour.teal())
+                    # displays last comp played
+                    embed.add_field(name="Augments:", value="[1, 2, 3]: " + strings[7], inline=False)
+                    embed.add_field(name="Last Comp:", value=strings[4] + "\n\n" + strings[5], inline=False)
+                    user_servers = get_servers_from_player(friend)
+                    for server in user_servers:
+                        default_channel = client.get_channel(get_channel_from_server(server))
+                        await default_channel.send(embed=embed)
+                    NEEDS_UPDATE[friend] = recent_match
+                # just add older games to last game played
+                elif get_last_game(friend) != recent_match:
+                    NEEDS_UPDATE[friend] = recent_match
+            else:
+                embed = discord.Embed(title=friend, description="has not played a game of TFT.")
     # prints exceptions in personal test channel
     except Exception as e:
         traceback_str = ''.join(traceback.format_exception(None, e, e.__traceback__))
